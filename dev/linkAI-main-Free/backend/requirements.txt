@@ -1,0 +1,7 @@
+llama-index==0.10.0  # 버전은 환경에 맞게 조정 가능
+llama-index-vector-stores-qdrant
+llama-index-postprocessor-sentencetransformers-rerank
+llama-index-llms-ollama
+sentence-transformers
+torch
+qdrant-client
