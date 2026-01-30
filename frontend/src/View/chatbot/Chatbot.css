@@ -212,6 +212,17 @@
   padding-bottom: 120px;
 }
 
+/* 메시지 내용을 가운데 정렬하는 wrapper */
+.chatbot-window .react-chatbot-kit-chat-bot-message-container,
+.chatbot-window .react-chatbot-kit-user-chat-message-container {
+  max-width: 920px;
+  margin-left: auto;
+  margin-right: auto;
+  padding-left: 20px;
+  padding-right: 20px;
+  box-sizing: border-box;
+}
+
 .chatbot-window .react-chatbot-kit-chat-input-container {
   flex: 0 0 auto;
 }
