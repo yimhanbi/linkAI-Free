@@ -70,9 +70,10 @@ build/
 logs/
 
 # ============================
-# Backend storage (PDF files)
+# Backend storage & data (large files)
 # ============================
 backend/storage/
+backend/data/
 
 # ============================
 # Environment variables (secrets)

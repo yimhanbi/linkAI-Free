@@ -40,7 +40,7 @@ const ChatWelcome: React.FC<Props> = ({ onPickTemplate }) => {
         {/* 헤더 배너 */}
         <div className="chatbot-header-banner">
           <span className="chatbot-header-subtitle">LlamaIndex Semantic Re-ranking</span>
-          <h2 className="chatbot-header-title">Engine Sigma (Σ)</h2>
+          <h2 className="chatbot-header-title">Engine Beta (β)</h2>
         </div>
         <h1 className="chatbot-welcome-title">무엇을 도와드릴까요?</h1>
         <p className="chatbot-welcome-subtitle">
