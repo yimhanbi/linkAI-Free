@@ -119,8 +119,8 @@ class ChatbotEngine:
                 "$push": {
                     "messages": {
                         "$each": [
-                            {"role": "user", "content": user_query, "timestamp": time.time()},
-                            {"role": "assistant", "content": ai_answer, "timestamp": time.time()},
+                        {"role": "user", "content": user_query, "timestamp": time.time()},
+                        {"role": "assistant", "content": ai_answer, "timestamp": time.time()},
                         ]
                     }
                 },
