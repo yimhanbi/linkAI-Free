@@ -391,8 +391,18 @@ async def run_llamaindex_query(query: str, top_k: int = 30) -> Tuple[str, List[d
         sources = print_sources(combined_nodes)
         overall_elapsed = time.time() - overall_start
         print(f"✅ [전체 완료] {overall_elapsed:.2f}초\n")
-        
-        return answer, sources
+
+        # 8. 사용자가 바로 볼 수 있도록 답변 하단에 출처를 텍스트로 붙여준다.
+        if sources:
+            sources_lines: list[str] = ["\n\n[출처]"]
+            for idx, (pno, ano, title) in enumerate(sources, 1):
+                line = f"{idx}. 공개번호: {pno or '-'} / 출원번호: {ano or '-'} / 제목: {title or '-'}"
+                sources_lines.append(line)
+            answer_with_sources: str = answer + "\n".join(sources_lines)
+        else:
+            answer_with_sources = answer
+
+        return answer_with_sources, sources
 
     except Exception as e:
         # 에러 발생 시 상세 로그를 터미널에 강제로 찍습니다.

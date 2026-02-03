@@ -48,8 +48,7 @@ class ChatbotEngine:
         start_time = time.time()
         
         # 3. RAG 답변 생성 (search_service의 비동기 함수 호출)
-        # 주의: search_service에 hybrid_rag_answer 함수가 정의되어 있어야 합니다.
-        answer,sources = await search_service.run_llamaindex_query(query, top_k=top_k)
+        answer, sources = await search_service.run_llamaindex_query(query, top_k=top_k)
         
         # 4. 처리 시간 계산
         query_time = time.time() - start_time
@@ -57,15 +56,16 @@ class ChatbotEngine:
         # 5. MongoDB 대화 내역에 저장
         await self.save_message(session_id, query, answer)
         
-        # 6. 최종 응답 객체 반환
+        # 6. 최종 응답 객체 반환 (출처 정보 포함)
         return {
             "answer": answer,
             "session_id": session_id,
             "timestamp": datetime.utcnow().isoformat(),
             "metadata": {
                 "query_time": round(query_time, 2),
-                "top_k": top_k
-            }
+                "top_k": top_k,
+                "sources": sources,
+            },
         }
 
     async def answer_with_context(
