@@ -49,34 +49,30 @@ def get_config() -> AppConfig:
 def configure_llamaindex() -> AppConfig:
     cfg = get_config()
 
-    
-    # 모델 선택: 
     if cfg.openai_api_key:
+        # --- OpenAI 모드 ---
         os.environ["OPENAI_API_KEY"] = cfg.openai_api_key
-    from llama_index.llms.openai import OpenAI
+        from llama_index.llms.openai import OpenAI
         from llama_index.embeddings.openai import OpenAIEmbedding
 
-    Settings.llm = OpenAI(model=cfg.openai_llm_model)
-        Settings.embed_model = OpenAIEmbedding(model=cfg.openai_embed_model)
+        Settings.llm = OpenAI(model=cfg.openai_llm_model)
+        # 중요: 기존 Qdrant 데이터가 Ollama로 인덱싱되었다면 아래 줄은 주석 처리하고 OllamaEmbedding을 쓰세요.
+        # Settings.embed_model = OpenAIEmbedding(model=cfg.openai_embed_model)
+        
+        # (임시 해결책) 기존 로컬 데이터를 그대로 쓰기 위해 임베딩만 Ollama 유지
+        from llama_index.embeddings.ollama import OllamaEmbedding
+        # Settings.embed_model = OllamaEmbedding(model_name=cfg.ollama_embed_model, base_url=cfg.ollama_base_url)
+        
+        print(f"🚀 OpenAI 모드 활성화: {cfg.openai_llm_model}")
+
     else:
+        # --- Ollama 모드 (로컬 전용) ---
         from llama_index.llms.ollama import Ollama
         from llama_index.embeddings.ollama import OllamaEmbedding
 
         Settings.llm = Ollama(model=cfg.ollama_llm_model, base_url=cfg.ollama_base_url)
         Settings.embed_model = OllamaEmbedding(model_name=cfg.ollama_embed_model, base_url=cfg.ollama_base_url)
-
-
-    ollama llm
-    from llama_index.llms.ollama import Ollama
-    Settings.llm = Ollama(model=cfg.ollama_llm_model, base_url=cfg.ollama_base_url)
-
-    # ollama embedding
-    from llama_index.embeddings.ollama import OllamaEmbedding
-    Settings.embed_model = OllamaEmbedding(model_name=cfg.ollama_embed_model, base_url=cfg.ollama_base_url)
-    
-
-    # openai llm
-    from llama_index.llms.openai import OpenAI
-    Settings.llm = OpenAI(model=cfg.openai_llm_model)
+        
+        print(f"🏠 Ollama 로컬 모드 활성화: {cfg.ollama_llm_model}")
 
     return cfg

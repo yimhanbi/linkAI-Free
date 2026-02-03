@@ -72,33 +72,31 @@ class MetaPrefixPostprocessor(BaseNodePostprocessor):
             node = nws.node
             meta = node.metadata or {}
             
+            #메타데이터에서 특허 정보 추출
+            patent_no = meta.get("patent_no","")
+            application_no = meta.get("application_number","")
+            title = meta.get("title","")
             
-        #메타데이터에서 특허 정보 추출
-        patent_no = meta.get("patent_no","")
-        application_no = meta.get("application_number","")
-        title = meta.get("title","")
+            #메타데이터에서 프리픽스 생성
+            prefix= (
+                f"[META]\n"
+                f" - 공개번호: {patent_no}\n"
+                f" - 출원번호: {application_no}\n"
+                f" - 제목:  {title}\n"
+                f"[/META]\n\n"
+            )
+            
+            #기존 텍스트 가져오기
+            orig = getattr(node,"text",None)
+            if not orig:
+                orig = node.get_content() or ""
+            
+            #이미 메타데이터가 있으면 건너뛰기
+            if orig.startswith("[META]\n"):
+                node.text= orig
+            else:
+                node.text = prefix + orig
         
-        #메타데이터에서 프리픽스 생성
-        prefix= (
-            f"[META]\n"
-            f" - 공개번호: {patent_no}\n"
-            f" - 출원번호: {application_no}\n"
-            f" - 제목:  {title}\n"
-            f"[/META]\n\n"
-        )
-        
-        #기존 텍스트 가져오기
-        orig = getattr(node,"text",None)
-        if not orig:
-            orig = node.get_content() or ""
-            
-            
-        #이미 메타데이터가 있으면 건너뛰기
-        if orig.startswith("[META]\n"):
-            node.text= orig
-        else:
-            node.text = prefix + orig
-            
         return nodes 
 
 
@@ -242,32 +240,64 @@ def print_sources(nodes: List[NodeWithScore]) -> List[dict]:
 async def initialize_llamaindex():
     global client, index, retriever, reranker, synth
     
+    # 1. 시작 시간 기록 (에러 방지 핵심!)
     start = time.time()
-    print("▶ Initializing LlamaIndex with Ollama ({LLM_MODEL})...")
     
+    # 환경 변수 확인
+    openai_key = os.getenv("OPENAI_API_KEY")
+    llm_name = "gpt-4o-mini" if openai_key else LLM_MODEL
+    print(f"▶ Initializing LlamaIndex with {llm_name}...")
     
     try:
-        #Ollama 모델 LlamaIndex 전역 설정에 주입 --
-        #1. LLM 설정 (답변 생성용)
-        Settings.llm = Ollama(
-            model = LLM_MODEL,
-            base_url = OLLAMA_BASE_URL,
-            request_timeout = 300.0 #서버 타임아웃 5분 
-        )
-        
-        #2. Embedding 설정 
+        # 2. LLM 설정
+        if openai_key:
+            from llama_index.llms.openai import OpenAI
+            os.environ["OPENAI_API_KEY"] = openai_key
+            Settings.llm = OpenAI(model="gpt-4o-mini")
+            print("🚀 LLM Mode: OpenAI (gpt-4o-mini)")
+        else:
+            Settings.llm = Ollama(
+                model=LLM_MODEL,
+                base_url=OLLAMA_BASE_URL,
+                request_timeout=300.0 
+            )
+            print(f"🏠 LLM Mode: Ollama ({LLM_MODEL})")
+
+        # 3. Embedding 설정
         Settings.embed_model = OllamaEmbedding(
-            model_name = EMBED_MODEL,
-            base_url = OLLAMA_BASE_URL
+            model_name=EMBED_MODEL,
+            base_url=OLLAMA_BASE_URL
         )
+# async def initialize_llamaindex():
+#     global client, index, retriever, reranker, synth
+    
+#     start = time.time()
+#     print(f"▶ Initializing LlamaIndex with Ollama ({LLM_MODEL})...")
+    
+    
+#     try:
+#         #Ollama 모델 LlamaIndex 전역 설정에 주입 --
+#         #1. LLM 설정 (답변 생성용)
+#         Settings.llm = Ollama(
+#             model = LLM_MODEL,
+#             base_url = OLLAMA_BASE_URL,
+#             request_timeout=600.0,
+#         )
+        
+#         #2. Embedding 설정 
+#         Settings.embed_model = OllamaEmbedding(
+#             model_name = EMBED_MODEL,
+#             base_url = OLLAMA_BASE_URL,
+#             request_timeout=900.0,
+#         )
         
         # --------------------------------------------------
         
-        # 1. Qdrant 클라이언트 생성
-        client = QdrantClient(url=QDRANT_URL)
+       # 4. Qdrant 클라이언트 연결
+        client = QdrantClient(url=QDRANT_URL, timeout=60)
         print("▶ Qdrant Connected")
         
-        # 2. Vector Store & Index 생성
+        # 5. Vector Store & Index 생성
         vector_store = QdrantVectorStore(client=client, collection_name=COLLECTION_NAME)
         storage_context = StorageContext.from_defaults(vector_store=vector_store)
         
@@ -276,116 +306,114 @@ async def initialize_llamaindex():
             storage_context=storage_context,
         )
         
-        # 3. Retriever 생성 (벡터 유사도 기반 검색)
+        # 6. 검색 및 엔진 구성 요소 초기화
         retriever = index.as_retriever(similarity_top_k=RETRIEVER_TOP_K)
         
-        # 4. Reranker 생성 (Cross-Encoder로 결과 재정렬)
-        # 더 정확한 관련성 판단을 위해 사용
         reranker = SentenceTransformerRerank(
             model="cross-encoder/ms-marco-MiniLM-L-6-v2",
-            top_n=RERANKER_TOP_K,
+            top_n=RERANKER_TOP_K
+            # device = "cpu"
         )
         
-        # 5. Response Synthesizer 생성 (LLM 답변 생성)
-        synth = get_response_synthesizer()
+        synth = get_response_synthesizer(
+            response_mode="compact"
+        )
         
+        # 7. 소요 시간 계산
         elapsed = time.time() - start
         print(f"✅ LlamaIndex engine initialized in {elapsed:.2f}초")
         
     except Exception as e:
-        print(f"초기화 실패:{e}")
+        print(f"❌ 초기화 실패: {e}")
         import traceback
         traceback.print_exc()
         raise e
     
-    
-        
-
 
 
 #--------------------------------------
 # 쿼리 실행 함수
 #--------------------------------------
-async def run_llamaindex_query(query: str,top_k: int = 30) -> Tuple[str, List[dict]]:
+async def run_llamaindex_query(query: str, top_k: int = 30) -> Tuple[str, List[dict]]:
     overall_start = time.time()
     
     print(f"\n{'#'*70}")
-    print(f"🔍 [LlamaIndex RAG 시작]")
-    print(f"   Query: '{query}'")
+    print(f"🔍 [LlamaIndex RAG 시작] Query: '{query}'")
     print(f"{'#'*70}")
     
-    # 1. 쿼리 번들 생성 (LlamaIndex 내부 형식)
-    qb = QueryBundle(query)
+    try:
+        # 1. 쿼리 번들 생성
+        qb = QueryBundle(query)
+        
+        # 2. 벡터 검색
+        retrieve_start = time.time()
+        base_nodes = retriever.retrieve(qb)
+        retrieve_elapsed = time.time() - retrieve_start
+        print(f"⏱️  [1단계: 벡터 검색] {retrieve_elapsed:.2f}초 → {len(base_nodes)}개 노드")
+        
+        # 3. Reranking
+        rerank_start = time.time()
+        reranked_nodes = reranker.postprocess_nodes(base_nodes, query_bundle=qb)
+        rerank_elapsed = time.time() - rerank_start
+        print(f"⏱️  [2단계: Reranking] {rerank_elapsed:.2f}초 → {len(reranked_nodes)}개 노드")
+        
+        # 4. 메타데이터 검색 (가장 의심되는 구간 1)
+        meta_start = time.time()
+        tokens = simple_tokenize_korean(query)
+        print(f"🔎 [토큰화 완료] {tokens}")
+        
+        # qdrant_meta_search 내부에서 에러가 나는지 확인
+        meta_nodes = qdrant_meta_search(tokens=tokens, limit=METADATA_TOP_K)
+        meta_elapsed = time.time() - meta_start
+        print(f"⏱️  [3단계: 메타데이터 검색] {meta_elapsed:.2f}초 → {len(meta_nodes)}개 노드")
+        
+        # 5. 노드 결합 및 프리픽스 추가
+        combine_start = time.time()
+        combined_nodes = list(reranked_nodes) + list(meta_nodes)
+        
+        postprocessor = MetaPrefixPostprocessor()
+        combined_nodes = postprocessor.postprocess_nodes(combined_nodes, query_str=query)
+        combine_elapsed = time.time() - combine_start
+        print(f"⏱️  [4단계: 노드 결합] {combine_elapsed:.2f}초")
+        
+        # 6. LLM 답변 생성 (가장 의심되는 구간 2 - OpenAI 호출)
+        llm_start = time.time()
+        print(f"🧠 [5단계: LLM 답변 생성 중...]")
+        
+        # 여기서 멈춘다면 API 키 문제나 네트워크 문제입니다.
+        resp = synth.synthesize(qb, combined_nodes)
+        answer = str(resp)
+        
+        llm_elapsed = time.time() - llm_start
+        print(f"⏱️  [5단계: LLM 답변] {llm_elapsed:.2f}초")
+        
+        # 7. 출처 추출
+        sources = print_sources(combined_nodes)
+        overall_elapsed = time.time() - overall_start
+        print(f"✅ [전체 완료] {overall_elapsed:.2f}초\n")
+        
+        return answer, sources
+
+    except Exception as e:
+        # 에러 발생 시 상세 로그를 터미널에 강제로 찍습니다.
+        print("\n" + "!"*30 + " ERROR 발생 " + "!"*30)
+        import traceback
+        traceback.print_exc() # 어느 줄에서 에러가 났는지 알려줌
+        print("!"*72 + "\n")
+        # 에러를 다시 던져서 500 응답이 나가게 함
+        raise e
+
+
     
-    # 2. 벡터 검색 (임베딩 기반)
-    retrieve_start = time.time()
-    base_nodes = retriever.retrieve(qb)
-    retrieve_elapsed = time.time() - retrieve_start
-    print(f"⏱️  [1단계: 벡터 검색] {retrieve_elapsed:.2f}초 → {len(base_nodes)}개 노드")
+# 수정 후 (방어 코드 적용)
+async def close(self):
+    # hasattr를 사용하여 변수가 실제로 존재하는지 확인하고 닫습니다.
+    if hasattr(self, 'client_openai_async') and self.client_openai_async:
+        await self.client_openai_async.close()
     
-    # 3. Reranking (더 정확한 관련성 순으로 재정렬)
-    rerank_start = time.time()
-    reranked_nodes = reranker.postprocess_nodes(base_nodes, query_bundle=qb)
-    rerank_elapsed = time.time() - rerank_start
-    print(f"⏱️  [2단계: Reranking] {rerank_elapsed:.2f}초 → {len(reranked_nodes)}개 노드")
+    # Qdrant 클라이언트 등 다른 연결도 안전하게 닫기
+    if hasattr(self, 'client') and self.client:
+        self.client.close()
+        
+    print("✅ 챗봇 검색 서비스가 안전하게 종료되었습니다.")
     
-    # 4. 메타데이터 검색 (출원인, 발명자 등 직접 매칭)
-    meta_start = time.time()
-    
-    # 4-1. 쿼리 토큰화 (조사 제거, 불용어 제거)
-    tokens = simple_tokenize_korean(query)
-    print(f"🔎 [토큰화] {tokens}")
-    
-    # 4-2. 메타데이터 필드에서 토큰 검색
-    meta_nodes = qdrant_meta_search(
-        tokens=tokens,
-        limit=METADATA_TOP_K,
-    )
-    meta_elapsed = time.time() - meta_start
-    print(f"⏱️  [3단계: 메타데이터 검색] {meta_elapsed:.2f}초 → {len(meta_nodes)}개 노드")
-    
-    # 5. 노드 결합 및 메타데이터 추가
-    combine_start = time.time()
-    
-    # 벡터 검색 결과 + 메타데이터 검색 결과 합치기
-    combined_nodes = list(reranked_nodes) + list(meta_nodes)
-    
-    # 각 노드에 [META] 태그 추가
-    meta_prefix = MetaPrefixPostprocessor()
-    combined_nodes = meta_prefix.postprocess_nodes(combined_nodes, query_bundle=qb)
-    
-    combine_elapsed = time.time() - combine_start
-    print(f"⏱️  [4단계: 노드 결합] {combine_elapsed:.2f}초 → {len(combined_nodes)}개 노드")
-    
-    # 6. LLM 답변 생성
-    llm_start = time.time()
-    print(f"\n🧠 [5단계: LLM 답변 생성 중...]")
-    
-    # LLM에게 context와 query를 전달하여 답변 생성
-    resp = synth.synthesize(qb, combined_nodes)
-    answer = str(resp)
-    
-    llm_elapsed = time.time() - llm_start
-    print(f"⏱️  [5단계: LLM 답변] {llm_elapsed:.2f}초")
-    print(f"   - 답변 길이: {len(answer)}자")
-    
-    # 7. 출처 추출 (중복 제거)
-    sources = print_sources(combined_nodes)
-    
-    # 전체 시간 계산 및 로그 출력
-    overall_elapsed = time.time() - overall_start
-    
-    print(f"\n{'='*70}")
-    print(f"✅ [전체 완료] {overall_elapsed:.2f}초")
-    print(f"{'='*70}")
-    print(f"📊 [시간 분해]")
-    print(f"   1. 벡터 검색:      {retrieve_elapsed:6.2f}초 ({retrieve_elapsed/overall_elapsed*100:5.1f}%)")
-    print(f"   2. Reranking:      {rerank_elapsed:6.2f}초 ({rerank_elapsed/overall_elapsed*100:5.1f}%)")
-    print(f"   3. 메타 검색:      {meta_elapsed:6.2f}초 ({meta_elapsed/overall_elapsed*100:5.1f}%)")
-    print(f"   4. 노드 결합:      {combine_elapsed:6.2f}초 ({combine_elapsed/overall_elapsed*100:5.1f}%)")
-    print(f"   5. LLM 답변:       {llm_elapsed:6.2f}초 ({llm_elapsed/overall_elapsed*100:5.1f}%)")
-    print(f"   ─────────────────────────")
-    print(f"   총 시간:          {overall_elapsed:6.2f}초")
-    print(f"{'='*70}\n")
-    
-    return answer, sources

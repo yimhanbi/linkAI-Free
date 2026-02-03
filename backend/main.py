@@ -53,7 +53,9 @@ app.add_middleware(
 
 # 3. 정적 파일(PDF) 경로 설정 추가
 backend_dir: Path = Path(__file__).resolve().parent
-default_pdf_dir: str = str(backend_dir / "storage" / "pdfs")
+# 기본값을 로컬 개발에서 사용하는 경로(`backend/data/pdfs`)로 맞추고,
+# Docker/배포 환경에서는 `PDF_DIR` 환경변수로 덮어쓰도록 합니다.
+default_pdf_dir: str = str(backend_dir / "data" / "pdfs")
 PDF_DIR: str = os.getenv("PDF_DIR", default_pdf_dir)
 
 # 폴더가 없으면 생성 (Docker/배포 환경에서 PDF를 별도로 마운트하는 경우가 많음)
