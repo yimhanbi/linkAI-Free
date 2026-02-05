@@ -41,7 +41,7 @@ const Header = () => {
     <header style={headerContainerStyle}>
       <span
         style={{ fontWeight: 800, fontSize: 18, color: "#1890ff", cursor: "pointer" }}
-        onClick={() => navigate('/')}
+        onClick={() => navigate('/welcome')}
       >
         LinkAI
       </span>
