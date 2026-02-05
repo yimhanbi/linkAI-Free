@@ -33,9 +33,6 @@ export default function WelcomePage() {
       <ScrollTriggerWrapper />
 
       <div className="linkai-bridge">
-        <p className="linkai-bridge-slogan">
-          기술사업화의 새로운 기준, LinkAI
-        </p>
         <section
           id="ai-engine"
           className="linkai-section linkai-section-after-footer linkai-section-after-footer-ai"
