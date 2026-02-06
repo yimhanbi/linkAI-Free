@@ -237,59 +237,59 @@ def print_sources(nodes: List[NodeWithScore]) -> List[dict]:
 #--------------------------------------
 # 초기화 함수
 #--------------------------------------
-async def initialize_llamaindex():
-    global client, index, retriever, reranker, synth
-    
-    # 1. 시작 시간 기록 (에러 방지 핵심!)
-    start = time.time()
-    
-    # 환경 변수 확인
-    openai_key = os.getenv("OPENAI_API_KEY")
-    llm_name = "gpt-4o-mini" if openai_key else LLM_MODEL
-    print(f"▶ Initializing LlamaIndex with {llm_name}...")
-    
-    try:
-        # 2. LLM 설정
-        if openai_key:
-            from llama_index.llms.openai import OpenAI
-            os.environ["OPENAI_API_KEY"] = openai_key
-            Settings.llm = OpenAI(model="gpt-4o-mini")
-            print("🚀 LLM Mode: OpenAI (gpt-4o-mini)")
-        else:
-            Settings.llm = Ollama(
-                model=LLM_MODEL,
-                base_url=OLLAMA_BASE_URL,
-                request_timeout=300.0 
-            )
-            print(f"🏠 LLM Mode: Ollama ({LLM_MODEL})")
-
-        # 3. Embedding 설정
-        Settings.embed_model = OllamaEmbedding(
-            model_name=EMBED_MODEL,
-            base_url=OLLAMA_BASE_URL
-        )
 # async def initialize_llamaindex():
 #     global client, index, retriever, reranker, synth
     
+#     # 1. 시작 시간 기록 (에러 방지 핵심!)
 #     start = time.time()
-#     print(f"▶ Initializing LlamaIndex with Ollama ({LLM_MODEL})...")
     
+#     # 환경 변수 확인
+#     openai_key = os.getenv("OPENAI_API_KEY")
+#     llm_name = "gpt-4o-mini" if openai_key else LLM_MODEL
+#     print(f"▶ Initializing LlamaIndex with {llm_name}...")
     
 #     try:
-#         #Ollama 모델 LlamaIndex 전역 설정에 주입 --
-#         #1. LLM 설정 (답변 생성용)
-#         Settings.llm = Ollama(
-#             model = LLM_MODEL,
-#             base_url = OLLAMA_BASE_URL,
-#             request_timeout=600.0,
-#         )
-        
-#         #2. Embedding 설정 
+#         # 2. LLM 설정
+#         if openai_key:
+#             from llama_index.llms.openai import OpenAI
+#             os.environ["OPENAI_API_KEY"] = openai_key
+#             Settings.llm = OpenAI(model="gpt-4o-mini")
+#             print("🚀 LLM Mode: OpenAI (gpt-4o-mini)")
+#         else:
+#             Settings.llm = Ollama(
+#                 model=LLM_MODEL,
+#                 base_url=OLLAMA_BASE_URL,
+#                 request_timeout=300.0 
+#             )
+#             print(f"🏠 LLM Mode: Ollama ({LLM_MODEL})")
+
+#         # 3. Embedding 설정
 #         Settings.embed_model = OllamaEmbedding(
-#             model_name = EMBED_MODEL,
-#             base_url = OLLAMA_BASE_URL,
-#             request_timeout=900.0,
+#             model_name=EMBED_MODEL,
+#             base_url=OLLAMA_BASE_URL
 #         )
+async def initialize_llamaindex():
+    global client, index, retriever, reranker, synth
+    
+    start = time.time()
+    print(f"▶ Initializing LlamaIndex with Ollama ({LLM_MODEL})...")
+    
+    
+    try:
+        #Ollama 모델 LlamaIndex 전역 설정에 주입 --
+        #1. LLM 설정 (답변 생성용)
+        Settings.llm = Ollama(
+            model = LLM_MODEL,
+            base_url = OLLAMA_BASE_URL,
+            request_timeout=600.0,
+        )
+        
+        #2. Embedding 설정 
+        Settings.embed_model = OllamaEmbedding(
+            model_name = EMBED_MODEL,
+            base_url = OLLAMA_BASE_URL,
+            request_timeout=900.0,
+        )
         
         # --------------------------------------------------
         
@@ -311,8 +311,8 @@ async def initialize_llamaindex():
         
         reranker = SentenceTransformerRerank(
             model="cross-encoder/ms-marco-MiniLM-L-6-v2",
-            top_n=RERANKER_TOP_K
-            # device = "cpu"
+            top_n=RERANKER_TOP_K,
+            device = "cpu"
         )
         
         synth = get_response_synthesizer(

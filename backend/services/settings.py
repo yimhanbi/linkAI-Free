@@ -38,7 +38,7 @@ def get_config() -> AppConfig:
         reranker_top_k=int(os.getenv("RERANKER_TOP_K", "6")),
         metadata_top_k=int(os.getenv("METADATA_TOP_K", "6")),
         openai_api_key=os.getenv("OPENAI_API_KEY"),
-        openai_llm_model=os.getenv("OPENAI_LLM_MODEL", "gpt-4o-mini"),
+이제         openai_llm_model=os.getenv("OPENAI_LLM_MODEL", "gpt-4o-mini"),
         openai_embed_model=os.getenv("OPENAI_EMBED_MODEL", "text-embedding-3-large"),
         ollama_base_url=os.getenv("OLLAMA_BASE_URL"),
         ollama_llm_model=os.getenv("OLLAMA_LLM_MODEL", "qwen2.5:7b-instruct"),

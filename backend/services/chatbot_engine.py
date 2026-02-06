@@ -14,16 +14,12 @@ class ChatbotEngine:
     def __init__(self):
         self._initialized = False
         
-        # MongoDB 설정 (환경 변수 기본값 처리)
-        self.mongo_uri = os.getenv("MONGO_URI")
-        self.db_name = os.getenv("DB_NAME")
+        # MongoDB 설정/클라이언트는 현재 비활성화 (대화 내역은 MongoDB에 저장하지 않음)
+        self.mongo_uri = None
+        self.db_name = None
         self.chat_history_ttl_days = int(os.getenv("CHAT_HISTORY_TTL_DAYS", "30"))
-        
-        # MongoDB 클라이언트 초기화
-        self.client = AsyncIOMotorClient(self.mongo_uri)
-        self.db = self.client[self.db_name]
-        
-        # 인덱스 생성 여부 확인 플래그
+        self.client = None
+        self.db = None
         self._indexes_ensured = False
 
     # --------------------------------------
@@ -37,9 +33,6 @@ class ChatbotEngine:
         top_k: int = 30,
     ) -> dict:
         """기본 RAG 답변 생성 및 메시지 저장"""
-        # MongoDB 인덱스 자동 확인
-        await self._ensure_indexes_once()
-        
         # 1. 세션 ID가 없으면 새로 생성
         if not session_id:
             session_id = str(uuid.uuid4())
@@ -53,8 +46,8 @@ class ChatbotEngine:
         # 4. 처리 시간 계산
         query_time = time.time() - start_time
         
-        # 5. MongoDB 대화 내역에 저장
-        await self.save_message(session_id, query, answer)
+        # 5. MongoDB 대화 내역 저장 비활성화
+        # await self.save_message(session_id, query, answer)
         
         # 6. 최종 응답 객체 반환 (출처 정보 포함)
         return {
@@ -75,8 +68,8 @@ class ChatbotEngine:
         top_k: int = 30
     ) -> dict:
         """이전 대화 내역을 참고하여 답변 생성 (대화 맥락 유지)"""
-        # 1. 이전 대화 내역 조회
-        history = await self.get_chat_history(session_id)
+        # 1. 이전 대화 내역 조회 (MongoDB 비활성화로 현재 미사용)
+        history = []
         
         # 2. 최근 3개 문답(최대 6개 메시지)만 컨텍스트로 사용
         recent_messages = history[-6:] if len(history) > 6 else history

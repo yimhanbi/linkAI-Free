@@ -71,7 +71,7 @@ else:
 
 @app.on_event("startup")
 async def startup():
-    db_manager.connect()
+    # db_manager.connect()
     
     #챗봇 검색 서비스 초기화
     try:
@@ -87,14 +87,14 @@ async def startup():
     
 @app.on_event("shutdown")
 async def shutdown():
-    db_manager.close()
+    # db_manager.close()
     
     
     #비동기 클라이언트 정리
     try:
-        if search_service.client_openai_async:
+        if hasattr(search_service, "client_openai_async") and search_service.client_openai_async:
             await search_service.client_openai_async.close()
-        if search_service.client_qdrant_async:
+        if hasattr(search_service, "client_qdrant_async") and search_service.client_qdrant_async:
             await search_service.client_qdrant_async.close()
         print("챗봇 검색 서비스 종료 완료")
     except Exception as e:

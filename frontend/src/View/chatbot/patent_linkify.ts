@@ -24,6 +24,10 @@ export function tokenizePatentNumbers(text: string): PatentToken[] {
     const raw: string = m[0];
     const start: number = m.index ?? -1;
     if (start < 0) continue;
+    // 공개번호: 10-.... 패턴은 링크에서 제외
+    const ctxStart: number = Math.max(0, start - 20);
+    const ctx: string = text.slice(ctxStart, start);
+    if (ctx.includes("공개번호")) continue;
     matches.push({ start, end: start + raw.length, raw });
   }
 
@@ -31,6 +35,10 @@ export function tokenizePatentNumbers(text: string): PatentToken[] {
     const raw: string = m[0];
     const start: number = m.index ?? -1;
     if (start < 0) continue;
+    // 공개번호: 10... 패턴은 링크에서 제외
+    const ctxStart: number = Math.max(0, start - 20);
+    const ctx: string = text.slice(ctxStart, start);
+    if (ctx.includes("공개번호")) continue;
     matches.push({ start, end: start + raw.length, raw });
   }
 

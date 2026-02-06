@@ -1,5 +1,5 @@
 import os
-from motor.motor_asyncio import AsyncIOMotorClient
+from motor.motor_asyncio import AsyncIOMotorClient  # MongoDB (현재 런타임에서 미사용)
 from dotenv import load_dotenv
 from urllib.parse import urlsplit
 
@@ -31,31 +31,32 @@ def _resolve_local_mongo_uri(raw_uri: str) -> str:
         return raw_uri
 
 class MongoDB:
+    """MongoDB 연결 매니저 (현재 비활성화: 실제 연결/사용 안 함)"""
     def __init__(self):
         self.client = None
         self.db = None
-
+    
     def connect(self):
-        mongo_uri = os.getenv("MONGODB_URI") or os.getenv("MONGO_URI")
-        db_name = os.getenv("DB_NAME")
-        
-        if not mongo_uri:
-            print("⚠️  MONGODB_URI/MONGO_URI 환경 변수가 설정되지 않았습니다. 기본값을 사용합니다.")
-            mongo_uri = "mongodb://localhost:27017"
-        else:
-            mongo_uri = _resolve_local_mongo_uri(mongo_uri)
-        
-        if not db_name:
-            print("⚠️  DB_NAME 환경 변수가 설정되지 않았습니다. 기본값을 사용합니다.")
-            db_name = "moaai_db"
-        
-        self.client = AsyncIOMotorClient(mongo_uri)
-        self.db = self.client[db_name]
-        print(f"✅ MongoDB 비동기 연결 성공 (DB: {db_name})")
-
+        """MongoDB 연결 로직은 현재 비활성화되어 있습니다."""
+        # mongo_uri = os.getenv("MONGODB_URI") or os.getenv("MONGO_URI")
+        # db_name = os.getenv("DB_NAME")
+        # if not mongo_uri:
+        #     print("⚠️  MONGODB_URI/MONGO_URI 환경 변수가 설정되지 않았습니다. 기본값을 사용합니다.")
+        #     mongo_uri = "mongodb://localhost:27017"
+        # else:
+        #     mongo_uri = _resolve_local_mongo_uri(mongo_uri)
+        # if not db_name:
+        #     print("⚠️  DB_NAME 환경 변수가 설정되지 않았습니다. 기본값을 사용합니다.")
+        #     db_name = "moaai_db"
+        # self.client = AsyncIOMotorClient(mongo_uri)
+        # self.db = self.client[db_name]
+        print("ℹ️ MongoDB.connect() 호출됨 - 현재는 no-op 입니다.")
+    
     def close(self):
-        if self.client:
-            self.client.close()
-            print("❌ MongoDB 연결 종료")
-
+        """MongoDB 종료 로직은 현재 비활성화되어 있습니다."""
+        # if self.client:
+        #     self.client.close()
+        #     print("❌ MongoDB 연결 종료")
+        print("ℹ️ MongoDB.close() 호출됨 - 현재는 no-op 입니다.")
+    
 db_manager = MongoDB()
