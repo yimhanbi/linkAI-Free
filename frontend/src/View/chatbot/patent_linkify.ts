@@ -1,6 +1,6 @@
 export type PatentToken =
   | { type: "text"; value: string }
-  | { type: "patent"; value: string; normalized: string };
+  | { type: "patent"; value: string; normalized: string; kind: "application" | "publication" };
 
 const HYPHEN_APP_NO_REGEX: RegExp = /10\s*-\s*\d{4}\s*-\s*\d{6,7}/g;
 const DIGITS_APP_NO_REGEX: RegExp = /\b10\d{10,11}\b/g;
@@ -18,35 +18,33 @@ function isLikelyApplicationNumberDigits(value: string): boolean {
 export function tokenizePatentNumbers(text: string): PatentToken[] {
   if (!text) return [{ type: "text", value: "" }];
 
-  const matches: Array<{ start: number; end: number; raw: string }> = [];
+  const matches: Array<{ start: number; end: number; raw: string; isPublication: boolean }> = [];
 
   for (const m of text.matchAll(HYPHEN_APP_NO_REGEX)) {
     const raw: string = m[0];
     const start: number = m.index ?? -1;
     if (start < 0) continue;
-    // 공개번호: 10-.... 패턴은 링크에서 제외
     const ctxStart: number = Math.max(0, start - 20);
     const ctx: string = text.slice(ctxStart, start);
-    if (ctx.includes("공개번호")) continue;
-    matches.push({ start, end: start + raw.length, raw });
+    const isPublication: boolean = ctx.includes("공개번호");
+    matches.push({ start, end: start + raw.length, raw, isPublication });
   }
 
   for (const m of text.matchAll(DIGITS_APP_NO_REGEX)) {
     const raw: string = m[0];
     const start: number = m.index ?? -1;
     if (start < 0) continue;
-    // 공개번호: 10... 패턴은 링크에서 제외
     const ctxStart: number = Math.max(0, start - 20);
     const ctx: string = text.slice(ctxStart, start);
-    if (ctx.includes("공개번호")) continue;
-    matches.push({ start, end: start + raw.length, raw });
+    const isPublication: boolean = ctx.includes("공개번호");
+    matches.push({ start, end: start + raw.length, raw, isPublication });
   }
 
   if (matches.length === 0) return [{ type: "text", value: text }];
 
   // sort and de-dupe overlaps (prefer longer match)
   matches.sort((a, b) => a.start - b.start || b.end - b.start - (a.end - a.start));
-  const merged: Array<{ start: number; end: number; raw: string }> = [];
+  const merged: Array<{ start: number; end: number; raw: string; isPublication: boolean }> = [];
   for (const m of matches) {
     const last = merged[merged.length - 1];
     if (!last) {
@@ -54,7 +52,6 @@ export function tokenizePatentNumbers(text: string): PatentToken[] {
       continue;
     }
     if (m.start < last.end) {
-      // overlap: keep the longer one
       const lastLen: number = last.end - last.start;
       const curLen: number = m.end - m.start;
       if (curLen > lastLen) {
@@ -73,7 +70,12 @@ export function tokenizePatentNumbers(text: string): PatentToken[] {
     }
     const normalized: string = normalizeApplicationNumber(m.raw);
     if (isLikelyApplicationNumberDigits(normalized)) {
-      tokens.push({ type: "patent", value: m.raw, normalized });
+      tokens.push({
+        type: "patent",
+        value: m.raw,
+        normalized,
+        kind: m.isPublication ? "publication" : "application",
+      });
     } else {
       tokens.push({ type: "text", value: m.raw });
     }

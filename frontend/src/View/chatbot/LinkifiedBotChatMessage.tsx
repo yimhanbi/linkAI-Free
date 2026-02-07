@@ -24,7 +24,7 @@ export default function LinkifiedBotChatMessage(props: Props) {
               key={idx}
               type="button"
               className="linkai-patent-link"
-              onClick={() => openPatentModal(t.normalized)}
+              onClick={() => openPatentModal(t.normalized, t.kind)}
             >
               {t.value}
             </button>

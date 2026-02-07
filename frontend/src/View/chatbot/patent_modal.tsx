@@ -1,6 +1,7 @@
 import { Modal, Spin, Tabs } from "antd";
 import { useEffect, useMemo, useState } from "react";
 import { fetchPatents } from "@/Service/ip/patentService";
+import type { PatentNumberKind } from "./patent_modal_context";
 
 export type PatentDetail = {
   applicationNumber: string;
@@ -28,6 +29,7 @@ export type PatentDetail = {
 type Props = {
   isOpen: boolean;
   applicationNumber: string | null;
+  numberKind?: PatentNumberKind;
   cache: Record<string, PatentDetail>;
   onCache: (appNo: string, detail: PatentDetail) => void;
   onClose: () => void;
@@ -247,16 +249,24 @@ export default function PatentDetailModal(props: Props) {
     const run = async () => {
       setStatus("loading");
       setErrorMessage("");
+      const kind: PatentNumberKind = props.numberKind ?? "application";
       try {
-        const response = await fetchPatents({ app_num: appNo, limit: 1, page: 1 });
+        const params = kind === "publication"
+          ? { open_num: appNo, limit: 1, page: 1 }
+          : { app_num: appNo, limit: 1, page: 1 };
+        const response = await fetchPatents(params);
         const first: unknown = Array.isArray(response.data) ? response.data[0] : undefined;
         if (!first || typeof first !== "object") {
           throw new Error("특허 정보를 찾을 수 없습니다.");
         }
         const doc = first as Record<string, unknown>;
-        const result: PatentDetail = coercePatentDetail(appNo, doc);
+        const resolvedAppNo: string = pickFirstString(doc.applicationNumber) ?? appNo ?? "";
+        const result: PatentDetail = coercePatentDetail(resolvedAppNo, doc);
         if (didCancel) return;
-        props.onCache(appNo, result);
+        props.onCache(appNo ?? resolvedAppNo, result);
+        if (resolvedAppNo && resolvedAppNo !== appNo) {
+          props.onCache(resolvedAppNo, result);
+        }
         setDetail(result);
         setStatus("success");
       } catch (err) {
@@ -272,7 +282,7 @@ export default function PatentDetailModal(props: Props) {
     return () => {
       didCancel = true;
     };
-  }, [props.isOpen, appNo, cached, props]);
+  }, [props.isOpen, appNo, props.numberKind, cached, props]);
 
   const modalTitle = useMemo(() => {
     const titleKo: string =

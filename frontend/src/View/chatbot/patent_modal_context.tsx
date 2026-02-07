@@ -1,8 +1,10 @@
 import React, { createContext, useCallback, useContext, useMemo, useState } from "react";
 import PatentDetailModal, { type PatentDetail } from "./patent_modal";
 
+export type PatentNumberKind = "application" | "publication";
+
 type PatentModalContextValue = {
-  openPatentModal: (applicationNumber: string) => void;
+  openPatentModal: (number: string, kind?: PatentNumberKind) => void;
 };
 
 const PatentModalContext = createContext<PatentModalContextValue | null>(null);
@@ -21,11 +23,13 @@ type Props = {
 
 export default function PatentModalProvider(props: Props) {
   const [isOpen, setIsOpen] = useState<boolean>(false);
-  const [selectedAppNo, setSelectedAppNo] = useState<string | null>(null);
+  const [selectedNumber, setSelectedNumber] = useState<string | null>(null);
+  const [selectedKind, setSelectedKind] = useState<PatentNumberKind>("application");
   const [cache, setCache] = useState<Record<string, PatentDetail>>({});
 
-  const openPatentModal = useCallback((applicationNumber: string) => {
-    setSelectedAppNo(applicationNumber);
+  const openPatentModal = useCallback((number: string, kind: PatentNumberKind = "application") => {
+    setSelectedNumber(number);
+    setSelectedKind(kind);
     setIsOpen(true);
   }, []);
 
@@ -39,7 +43,8 @@ export default function PatentModalProvider(props: Props) {
       {props.children}
       <PatentDetailModal
         isOpen={isOpen}
-        applicationNumber={selectedAppNo}
+        applicationNumber={selectedNumber}
+        numberKind={selectedKind}
         cache={cache}
         onCache={(appNo: string, detail: PatentDetail) => {
           setCache((prev) => ({ ...prev, [appNo]: detail }));

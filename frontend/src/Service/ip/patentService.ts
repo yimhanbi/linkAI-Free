@@ -11,6 +11,7 @@ export interface FetchPatentsParams {
   manager?: string;
   applicant?: string;
   app_num?: string;
+  open_num?: string;
   reg_num?: string;
   status?: string | string[]; // 법적 상태 (단일 또는 배열)
   page?: number;

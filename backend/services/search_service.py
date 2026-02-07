@@ -2,6 +2,7 @@
 import time
 import re
 import json
+import random
 from typing import List, Tuple, Optional
 
 from llama_index.core import VectorStoreIndex, StorageContext, QueryBundle
@@ -9,6 +10,7 @@ from llama_index.core.postprocessor import SentenceTransformerRerank
 from llama_index.core.response_synthesizers import get_response_synthesizer
 from llama_index.core.schema import TextNode, NodeWithScore
 from llama_index.core.postprocessor.types import BaseNodePostprocessor
+from llama_index.core.prompts import PromptTemplate
 
 from llama_index.core import Settings
 from llama_index.llms.ollama import Ollama
@@ -19,6 +21,36 @@ from qdrant_client.models import Filter, FieldCondition, MatchValue, MinShould
 from llama_index.vector_stores.qdrant import QdrantVectorStore
 
 import os
+
+
+
+#-----------------------------------
+# 한국어 고정 System Prompt
+
+KOREAN_SYSTEM_PROMPT = PromptTemplate(
+    """당신은 한국 특허 문서를 분석하고 설명하는 전문가 AI입니다.
+
+중요 규칙:
+1. 모든 최종 답변은 반드시 한국어로만 작성합니다.
+2. 영어로 문장을 작성하지 마세요.
+3. 입력 문서나 컨텍스트에 영어가 포함되어 있어도
+   출력은 자연스러운 한국어여야 합니다.
+4. 전문 용어는 필요할 경우에만 영어 원어를 괄호로 병기하세요.
+5. 특허 설명에 적합하게 명확하고 논리적으로 답변하세요.
+
+---------------------
+[컨텍스트]
+{context_str}
+
+---------------------
+[질문]
+{query_str}
+
+[답변]
+"""
+)
+
+
 
 #-----------------------------------
 #환경 변수
@@ -105,7 +137,7 @@ class MetaPrefixPostprocessor(BaseNodePostprocessor):
 #--------------------------------------
 def simple_tokenize_korean(query: str) -> List[str]:
     # 1. 한글, 영문, 숫자만 추출
-    raw_tokens = re.findall(r"[가-힣A-Za-z0-9]+", query)
+    raw_tokens = re.findall(r"[가-힣A-Za-z0-9\-]+", query)
     cleaned = []
     
     for tok in raw_tokens:
@@ -157,10 +189,17 @@ def qdrant_meta_search(
     hits, _ = client.scroll(
         collection_name=COLLECTION_NAME,
         scroll_filter=flt,
-        limit=limit,
+        limit=limit * 2,
         with_payload=True,   # 메타데이터 포함
         with_vectors=False,  # 벡터는 불필요
     )
+    
+    
+    # 셔플
+    if hits:
+        random.shuffle(hits) #검색 결과를 무작위로 섞음
+    hits = hits[:limit]  #섞은 후 최종 limit만큼 자름
+    
 
     # 결과를 NodeWithScore 형태로 변환
     out = []
@@ -316,7 +355,8 @@ async def initialize_llamaindex():
         )
         
         synth = get_response_synthesizer(
-            response_mode="compact"
+            response_mode="compact",
+            text_qa_template=KOREAN_SYSTEM_PROMPT
         )
         
         # 7. 소요 시간 계산
@@ -336,6 +376,7 @@ async def initialize_llamaindex():
 #--------------------------------------
 async def run_llamaindex_query(query: str, top_k: int = 30) -> Tuple[str, List[dict]]:
     overall_start = time.time()
+
     
     print(f"\n{'#'*70}")
     print(f"🔍 [LlamaIndex RAG 시작] Query: '{query}'")

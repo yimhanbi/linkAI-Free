@@ -34,6 +34,19 @@ def _resolve_local_elasticsearch_url(raw_url: str | None) -> str:
     except Exception:
         return default_url
 
+def _normalize_app_num_for_search(app_num: str) -> tuple[str, str | None]:
+    """출원번호를 숫자만 추출하고, 한국식(10-YYYY-NNNNNNN) 하이픈 형식도 반환.
+    반환: (digits_only, hyphenated_or_none)
+    """
+    digits: str = re.sub(r"\D", "", app_num or "").strip()
+    if not digits:
+        return ("", None)
+    hyphenated: str | None = None
+    if len(digits) >= 13 and digits.startswith("10"):
+        hyphenated = f"10-{digits[2:6]}-{digits[6:]}"
+    return (digits, hyphenated)
+
+
 def _parse_and_or_query(field: str, query_str: str):
     """
     AND/OR 연산자를 포함한 쿼리 문자열을 Elasticsearch 쿼리로 변환
@@ -96,6 +109,7 @@ async def get_patents(
     manager: Optional[str] = Query(None, description="책임연구자"),
     applicant: Optional[str] = Query(None, description="연구자 소속(출원인)"),
     app_num: Optional[str] = Query(None, description="출원번호"),
+    open_num: Optional[str] = Query(None, description="공개번호"),
     reg_num: Optional[str] = Query(None, description="등록번호"),
     status: Optional[List[str]] = Query(None, description="법적 상태 (다중 선택 가능)"),
     page: int = 1, 
@@ -114,7 +128,7 @@ async def get_patents(
             skip,
         )
         logger.debug(
-            "patents_search_params request_id=%s tech_q=%r prod_q=%r desc_q=%r claim_q=%r inventor=%r manager=%r applicant=%r app_num=%r reg_num=%r status=%r",
+            "patents_search_params request_id=%s tech_q=%r prod_q=%r desc_q=%r claim_q=%r inventor=%r manager=%r applicant=%r app_num=%r open_num=%r reg_num=%r status=%r",
             request_id,
             tech_q,
             prod_q,
@@ -124,6 +138,7 @@ async def get_patents(
             manager,
             applicant,
             app_num,
+            open_num,
             reg_num,
             status,
         )
@@ -291,11 +306,44 @@ async def get_patents(
                 logger.debug("applicant_parsed request_id=%s query=%s", request_id, applicant_query)
                 must_queries.append(applicant_query)
         
-        # 출원번호 검색
+        # 출원번호 검색 (숫자만 / 10-YYYY-NNNNNNN 형식 둘 다 시도)
         if app_num:
-            logger.debug("app_num_match request_id=%s app_num=%r", request_id, app_num)
-            must_queries.append({"match": {"applicationNumber": app_num}})
-        
+            digits_only, hyphenated = _normalize_app_num_for_search(app_num)
+            logger.debug(
+                "app_num_match request_id=%s app_num=%r digits=%r hyphenated=%r",
+                request_id,
+                app_num,
+                digits_only,
+                hyphenated,
+            )
+            app_num_values: list[str] = [digits_only] if digits_only else []
+            if hyphenated and hyphenated not in app_num_values:
+                app_num_values.append(hyphenated)
+            raw_stripped: str = (app_num or "").strip()
+            if raw_stripped and raw_stripped not in app_num_values:
+                app_num_values.append(raw_stripped)
+            if app_num_values:
+                must_queries.append({"terms": {"applicationNumber": app_num_values}})
+
+        # 공개번호 검색 (숫자만 / 10-YYYY-NNNNNNN 형식 둘 다 시도)
+        if open_num:
+            digits_only, hyphenated = _normalize_app_num_for_search(open_num)
+            logger.debug(
+                "open_num_match request_id=%s open_num=%r digits=%r hyphenated=%r",
+                request_id,
+                open_num,
+                digits_only,
+                hyphenated,
+            )
+            open_num_values: list[str] = [digits_only] if digits_only else []
+            if hyphenated and hyphenated not in open_num_values:
+                open_num_values.append(hyphenated)
+            raw_open: str = (open_num or "").strip()
+            if raw_open and raw_open not in open_num_values:
+                open_num_values.append(raw_open)
+            if open_num_values:
+                must_queries.append({"terms": {"openNumber": open_num_values}})
+
         # 등록번호 검색
         if reg_num:
             logger.debug("reg_num_match request_id=%s reg_num=%r", request_id, reg_num)
