@@ -7,7 +7,7 @@ import ScrollTriggerWrapper from "./ScrollTriggerWrapper";
 import "./WelcomePage.css";
 
 const { Title, Text } = Typography;
-const CTA_HERO_TEXT = "지금 바로 1~3단계 분석 경험하기";
+const CTA_HERO_TEXT = "지금 바로 1~4단계 분석 경험하기";
 
 function scrollToHero(e: React.MouseEvent<HTMLAnchorElement>): void {
   e.preventDefault();
@@ -44,9 +44,13 @@ export default function WelcomePage() {
           </Title>
           <div className="linkai-section-bullets linkai-section-bullets-ai">
             <Text className="linkai-section-bullets-text">
-              <strong className="linkai-keyword">AI Engine</strong>은 단순한 키워드 검색을 넘어, 자연어에 담긴 복잡한 발명 의도를 <strong className="linkai-keyword">하이브리드 RAG 엔진</strong>으로 구조화합니다.
+              모호한 질문에서 정밀한 기술 자산까지,{" "}
+              <strong className="linkai-keyword">AI가 설계하는 원스톱 특허 분석 워크플로우</strong>
+              입니다.
               <br />
-              질문 하나로 <strong className="linkai-keyword">한양대 ERICA</strong>의 특허 자산과 시장의 니즈를 연결하여, 최적의 <strong className="linkai-keyword">기술사업화 경로</strong>를 정교하게 설계합니다.
+              단순 키워드 매칭을 넘어, 하이브리드 검색부터 청구항 심층 분석
+              까지 이어지는{" "}
+              <strong className="linkai-keyword">4단계 기술 엔진</strong>이 최적의 특허 솔루션을 제공합니다.
             </Text>
           </div>
 

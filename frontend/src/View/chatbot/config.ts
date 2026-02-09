@@ -9,12 +9,12 @@ import LinkifiedBotChatMessage from "./LinkifiedBotChatMessage";
 const themeColor = '#1890ff';
 
 const config = {
-    botName: "LinkAI Bot",
+    botName: "AI INNOTASK Bot",
 
 
     // 처음 대화창을 열었을 때 나오는 메시지
     initialMessages: [
-        createChatBotMessage('안녕하세요! LinkAI 특허 분석 도우미입니다.',{}),
+        createChatBotMessage('안녕하세요! AI INNOTASK 특허 분석 도우미입니다.',{}),
         createChatBotMessage('궁금하신 특허 번호나 기술 키워드를 입력해 주세요. 제가 분석해 드릴게요!',{
             delay:500,
         }),

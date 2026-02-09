@@ -35,7 +35,7 @@ class ActionProvider {
   }
 
   greet = (): void => {
-    const message: ChatMessage = this.createChatBotMessage('안녕하세요! LinkAI 특허 도우미입니다.');
+    const message: ChatMessage = this.createChatBotMessage('안녕하세요! AI INNOTASK 특허 도우미입니다.');
     this.updateChatbotState(message);
   };
 

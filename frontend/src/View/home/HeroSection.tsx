@@ -67,9 +67,9 @@ export default function HeroSection(): React.ReactElement {
           특허를 검색하지 마세요, AI와 함께 기술을 설계하세요
         </Title>
         <Text className="linkai-hero-subtitle">
-          GPT-5 기반의 의도 분석과 하이브리드 검색 엔진이 한양대 ERICA의
+        하이브리드 검색 엔진과 지능형 의도 분석 기술이 한양대 ERICA의 
           <br />
-          방대한 특허 자산을 맥락으로 연결합니다.
+          방대한 특허 자산을 전략적 자산으로 연결합니다.
         </Text>
 
         <SkeletonInput

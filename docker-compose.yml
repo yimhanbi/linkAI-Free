@@ -1,47 +1,60 @@
-services:
-  mongo:
-    image: mongo:7
-    restart: unless-stopped
-    ports:
-      - "27017:27017"
-    volumes:
-      - mongo_data:/data/db
+version: '3.8'
 
+services:
+  # 1) Elasticsearch (옵션) - 현재 비활성화
+  # elasticsearch:
+  #   image: docker.elastic.co/elasticsearch/elasticsearch:8.10.2
+  #   container_name: es-container
+  #   environment:
+  #     - discovery.type=single-node
+  #     - xpack.security.enabled=false
+  #     - "ES_JAVA_OPTS=-Xms2g -Xmx2g" # 서버 사양에 맞춰 2GB 이상 권장
+  #   ulimits:
+  #     memlock:
+  #       soft: -1
+  #       hard: -1
+  #   volumes:
+  #     - es_data:/usr/share/elasticsearch/data # 데이터 영구 저장
+  #   ports:
+  #     - "9200:9200"
+  #   networks:
+  #     - service-net
+
+  # 2) Backend (FastAPI)
   backend:
     build:
       context: .
       dockerfile: backend/Dockerfile
-    depends_on:
-      - mongo
-    env_file:
-      - backend/.env
-    environment:
-      - PORT=8000
-      - PDF_DIR=/app/backend/storage/pdfs
-      # Local default: use the docker-compose MongoDB container
-      - MONGO_URI=mongodb://mongo:27017
-      - DB_NAME=moaai_db
-      # Set these in a local env file or your shell:
-      # - MONGODB_URI=...
-      # - OPENAI_API_KEY=...
-      # - QDRANT_URL=...
-      # - QDRANT_API_KEY=...
-      # - ELASTICSEARCH_URL=...
+    container_name: api-container
     ports:
-      - "8000:8000"
+      - "3001:3001"
+    environment:
+      - PYTHONUNBUFFERED=1
+      # Elasticsearch 연동 시 아래 주석을 해제하고 elasticsearch 서비스를 활성화하세요.
+      # - ELASTICSEARCH_URL=http://elasticsearch:9200
+    networks:
+      - service-net
 
+  # 3) Frontend (Vite)
   frontend:
     build:
       context: .
       dockerfile: frontend/Dockerfile
       args:
-        VITE_BACKEND_URL: "http://localhost:8000"
-    environment:
-      - PORT=3000
+        # 배포 시에는 서버의 공인 IP나 도메인을 입력해야 합니다.
+        - VITE_BACKEND_URL=http://localhost:3001
+    container_name: web-container
     ports:
       - "3000:3000"
     depends_on:
       - backend
+    networks:
+      - service-net
 
 volumes:
-  mongo_data:
+  # Elasticsearch 데이터를 서버에 저장하기 위한 볼륨 (현재 elasticsearch 서비스는 비활성화)
+  es_data:
+
+networks:
+  service-net:
+    driver: bridge

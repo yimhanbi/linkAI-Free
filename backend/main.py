@@ -25,7 +25,7 @@ if should_quiet_third_party_logs:
     logging.getLogger("motor").setLevel(logging.WARNING)
     logging.getLogger("httpx").setLevel(logging.WARNING)
 
-app = FastAPI(title="LinkAI 서비스 API")
+app = FastAPI(title="AI INNOTASK 서비스 API")
 
 # 2. CORS 설정 추가 (라우터 연결보다 반드시 위에 위치!)
 cors_origins_raw: str = os.getenv("CORS_ORIGINS", "")
@@ -107,4 +107,4 @@ app.include_router(chatbot.router, prefix="/api/chatbot", tags=["Chatbot"])
 
 @app.get("/")
 async def index():
-    return {"status": "online", "message": "LinkAI API Server"}
+    return {"status": "online", "message": "AI INNOTASK API Server"}

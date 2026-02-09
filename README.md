@@ -1,4 +1,4 @@
-# LinkAI - 특허 검색 시스템
+# AI INNOTASK - 특허 검색 시스템
 
 React + TypeScript + Vite 기반의 특허 검색 및 분석 플랫폼으로, Elasticsearch를 활용한 고성능 검색 엔진과 MongoDB를 통한 데이터 관리 기능을 제공합니다.
 

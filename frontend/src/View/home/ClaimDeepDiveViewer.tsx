@@ -2,50 +2,53 @@ import React from "react";
 import { FileSearch } from "lucide-react";
 import "./WelcomePage.css";
 
-const CLAIM_PART = (text: string, highlight?: boolean, label?: string) =>
-  ({ text, highlight, label } as const);
+type HighlightVariant = "blue" | "green" | "amber" | "none";
+
+const CLAIM_PART = (
+  text: string,
+  variant: HighlightVariant = "none",
+  label?: string
+) => ({ text, variant, label } as const);
 
 const ANALYSIS_BLOCKS: ReadonlyArray<{
   header: string;
-  claimParts: ReadonlyArray<{ text: string; highlight?: boolean; label?: string }>;
+  claimParts: ReadonlyArray<{
+    text: string;
+    variant: HighlightVariant;
+    label?: string;
+  }>;
   insights: ReadonlyArray<{ title: string; body: string }>;
   conclusion: string;
 }> = [
   {
-    header: "[분석 중] 10-2024-0000776: 압력감지센서 및 모니터링 서비스 제공 방법",
+    header:
+      "[분석 중] 10-2017-0003351: 거푸집 용 발열 필름, 및 이를 포함하는 발열 거푸집",
     claimParts: [
-      CLAIM_PART("청구항 제1항 "),
-      CLAIM_PART("압력감지", true, "핵심 기술 요소"),
-      CLAIM_PART("센서와, 상기 압력감지 센서로부터 수신한 신호를 처리하는 "),
-      CLAIM_PART("데이터 전송 모듈", true, "핵심 기술 요소"),
+      CLAIM_PART("청구항 제1항: "),
+      CLAIM_PART("발열체", "blue", "핵심 발열 모듈"),
+      CLAIM_PART("와, 상기 발열체에 전원을 공급하는 전극선 및 이를 감싸는 "),
+      CLAIM_PART("절연 필름", "green", "안전·내구성 요소"),
       CLAIM_PART(
-        " 및 상기 데이터 전송 모듈을 통해 외부 장치와 연동하여 모니터링 서비스를 제공하는 제어부를 포함하는, 압력감지센서 및 모니터링 서비스 제공 방법에 있어서, 상기 제어부가 수집된 압력 데이터를 기반으로 이상 구간을 판별하고 해당 구간에 대한 알림을 생성하는 단계를 포함하는 것을 특징으로 하는 방법."
+        "을 포함하며, 저온 환경에서 콘크리트의 ",
+        "none"
+      ),
+      CLAIM_PART("초기 동결 방지", "amber", "동절기 시공 핵심 기능"),
+      CLAIM_PART(
+        "를 가능하게 하는 것을 특징으로 하는 발열 거푸집."
       ),
     ],
     insights: [
-      { title: "권리 범위 분석", body: "독립항으로서 광범위한 권리 범위를 형성함" },
-      { title: "기술적 차별성", body: "기존 센서 대비 저전력 데이터 처리 알고리즘 포함" },
+      {
+        title: "권리 범위 분석",
+        body: "단순 발열 장치가 아닌 '절연 필름 일체형 거푸집'으로 청구되어, 발열체·절연 구조를 모두 포함하는 광범위한 독점 권리를 형성합니다.",
+      },
+      {
+        title: "기술적 차별성",
+        body: "기존 외부 가열 방식 대비 저전력으로 콘크리트 심부 온도를 유지하는 구조·제어 알고리즘을 결합하여, 동절기 시공 품질을 안정적으로 확보합니다.",
+      },
     ],
     conclusion:
-      "본 청구항은 기존 기술 대비 데이터 정확도 측면에서 강력한 독창성을 가집니다.",
-  },
-  {
-    header: "[분석 중] 10-2023-0097051: 귀 질환 진단 방법 및 장치",
-    claimParts: [
-      CLAIM_PART("청구항 제1항 "),
-      CLAIM_PART("청력 손실", true, "핵심 기술 요소"),
-      CLAIM_PART("을 진단하기 위한 "),
-      CLAIM_PART("오디오 신호 처리", true, "핵심 기술 요소"),
-      CLAIM_PART(
-        " 방법에 있어서, 대상자의 청각 반응을 수집하는 단계와, 상기 수집된 신호에 대해 주파수별 임계값을 적용하여 이상 청력을 판별하는 단계를 포함하는 것을 특징으로 하는 귀 질환 진단 방법."
-      ),
-    ],
-    insights: [
-      { title: "권리 범위 분석", body: "진단 방법의 전 단계를 독립항으로 포괄하여\n권리 범위가 명확함" },
-      { title: "기술적 차별성", body: "주파수별 임계값 적용을 통한 정량적 진단 알고리즘\n포함" },
-    ],
-    conclusion:
-      "본 청구항은 청력 손실의 정밀 진단을 위한 방법론적 독창성을 인정받을 수 있습니다.",
+      "본 청구항은 동절기 공기 단축 및 품질 관리 측면에서 강력한 기술적 해법을 제시합니다.",
   },
 ];
 
@@ -67,9 +70,13 @@ function ClaimAnalysisBlock({
           <div className="linkai-claim-viewer-original-label">원문</div>
           <div className="linkai-claim-viewer-claim-text">
             {claimParts.map((part, idx) =>
-              part.highlight ? (
+              part.variant !== "none" ? (
                 <span key={idx} className="linkai-claim-highlight-wrap">
-                  <span className="linkai-claim-highlight">{part.text}</span>
+                  <span
+                    className={`linkai-claim-highlight linkai-claim-highlight--${part.variant}`}
+                  >
+                    {part.text}
+                  </span>
                   {part.label && (
                     <span className="linkai-claim-annotation">{part.label}</span>
                   )}

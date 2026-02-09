@@ -8,7 +8,6 @@ import {
   SettingOutlined,
   MenuOutlined,
   MessageOutlined,
-  HomeOutlined,
 } from '@ant-design/icons';
 import { useChatbotStore } from '@/ViewModel/useChatbotVM';
 
@@ -26,7 +25,7 @@ export default function Sidebar() {
   // 로그인 시 저장했던 role 정보를 가져옵니다.
   const userRole = localStorage.getItem('role') || 'user';
 
-  const selectedKey = location.pathname === CHATBOT_PATH || isOpen ? CHATBOT_PATH : location.pathname === '/' ? '/' : location.pathname;
+  const selectedKey = location.pathname === CHATBOT_PATH || isOpen ? CHATBOT_PATH : location.pathname;
 
   return (
     <StyledSider 
@@ -49,10 +48,6 @@ export default function Sidebar() {
         mode="inline"
         selectedKeys={[selectedKey]}
       >
-        <Menu.Item key="/" icon={<HomeOutlined />} onClick={closeChatbot}>
-          <NavLink to="/">Welcome</NavLink>
-        </Menu.Item>
-
         {/* AI Chatbot */}
         <Menu.Item 
           key={CHATBOT_PATH} 

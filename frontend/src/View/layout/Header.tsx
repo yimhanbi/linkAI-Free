@@ -43,7 +43,7 @@ const Header = () => {
         style={{ fontWeight: 800, fontSize: 18, color: "#1890ff", cursor: "pointer" }}
         onClick={() => navigate('/')}
       >
-        LinkAI
+        AI INNOTASK
       </span>
 
       <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
