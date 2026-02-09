@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { Typography } from "antd";
 import { ArrowUp } from "lucide-react";
+import HeroSection from "./HeroSection";
 import AIEngineScrollSection from "./AIEngineScrollSection";
 import ScrollTriggerWrapper from "./ScrollTriggerWrapper";
 import "./WelcomePage.css";
@@ -31,6 +32,7 @@ export default function WelcomePage() {
   return (
     <div className="linkai-welcome-root">
       <ScrollTriggerWrapper />
+      <HeroSection />
 
       <div className="linkai-bridge">
         <section

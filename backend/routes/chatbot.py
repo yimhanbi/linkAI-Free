@@ -3,7 +3,6 @@ from fastapi import APIRouter, HTTPException, Depends
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 from typing import Optional
-import json
 
 from backend.services.chatbot_engine import ChatbotEngine
 
@@ -27,12 +26,7 @@ async def ask_chatbot(request: ChatRequest, engine: ChatbotEngine = Depends(get_
     try:
         #엔진을 통해 답변 생성
         result = await engine.answer(request.query, session_id=request.session_id)
-        
-        #엔진 결과가 dict가 아닌 경우를 대비한 안전한 반환
-        if isinstance(result, dict):
-            return result
-        return {"answer": result, "session_id": request.session_id}
-    
+        return result if isinstance(result, dict) else {"answer": result, "session_id": request.session_id}
     except Exception as e:
         print(f"챗봇 에러: {e}")
         raise HTTPException(status_code=500, detail=str(e))

@@ -377,7 +377,12 @@ async def initialize_llamaindex():
 async def run_llamaindex_query(query: str, top_k: int = 30) -> Tuple[str, List[dict]]:
     overall_start = time.time()
 
-    
+    if retriever is None or synth is None:
+        raise RuntimeError(
+            "챗봇 검색 서비스가 초기화되지 않았습니다. "
+            "Qdrant/Ollama 연결 또는 LlamaIndex 초기화에 실패했을 수 있습니다. 서버 로그를 확인하거나 재시작해 주세요."
+        )
+
     print(f"\n{'#'*70}")
     print(f"🔍 [LlamaIndex RAG 시작] Query: '{query}'")
     print(f"{'#'*70}")
