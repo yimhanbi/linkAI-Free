@@ -9,7 +9,7 @@ WORKDIR /app
 COPY backend/requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# 2) 소스 코드 복사
+# 2) 소스 코드 복사 (컨테이너 루트 /app 에 평탄 구조)
 COPY backend/ .
 
 # 3) FastAPI 실행 (포트 3001)

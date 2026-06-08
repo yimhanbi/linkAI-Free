@@ -6,7 +6,7 @@ from typing import Dict, List, Optional
 from datetime import datetime, timedelta
 
 from motor.motor_asyncio import AsyncIOMotorClient
-from backend.services import search_service
+from services import search_service
 
 class ChatbotEngine:
     """특허 검색 챗봇 엔진 - 세션 관리 및 RAG 로직 연동"""
@@ -94,94 +94,106 @@ class ChatbotEngine:
     # --------------------------------------
     
     async def save_message(self, session_id: str, user_query: str, ai_answer: str) -> None:
-        """대화 내용을 MongoDB에 업데이트 (Upsert)"""
-        collection = self.db["chat_history"]
-        now_dt = datetime.utcnow()
-        
-        # 세션 제목: 첫 질문이 너무 길면 자름
-        title = (user_query[:25] + "...") if len(user_query) > 25 else user_query
-        
-        await collection.update_one(
-            {"session_id": session_id},
-            {
-                "$setOnInsert": {
-                    "session_id": session_id,
-                    "created_at": now_dt,
-                    "title": title,
-                },
-                "$push": {
-                    "messages": {
-                        "$each": [
-                        {"role": "user", "content": user_query, "timestamp": time.time()},
-                        {"role": "assistant", "content": ai_answer, "timestamp": time.time()},
-                        ]
-                    }
-                },
-                "$set": {
-                    "updated_at": now_dt,
-                    "expires_at": now_dt + timedelta(days=self.chat_history_ttl_days),
-                },
-            },
-            upsert=True,
-        )
+        """대화 내용을 MongoDB에 업데이트 (MongoDB 비활성화로 no-op)"""
+        # MongoDB를 사용하지 않으므로 아무 작업도 하지 않음
+        pass
+        # collection = self.db["chat_history"]
+        # now_dt = datetime.utcnow()
+        # 
+        # # 세션 제목: 첫 질문이 너무 길면 자름
+        # title = (user_query[:25] + "...") if len(user_query) > 25 else user_query
+        # 
+        # await collection.update_one(
+        #     {"session_id": session_id},
+        #     {
+        #         "$setOnInsert": {
+        #             "session_id": session_id,
+        #             "created_at": now_dt,
+        #             "title": title,
+        #         },
+        #         "$push": {
+        #             "messages": {
+        #                 "$each": [
+        #                 {"role": "user", "content": user_query, "timestamp": time.time()},
+        #                 {"role": "assistant", "content": ai_answer, "timestamp": time.time()},
+        #                 ]
+        #             }
+        #         },
+        #         "$set": {
+        #             "updated_at": now_dt,
+        #             "expires_at": now_dt + timedelta(days=self.chat_history_ttl_days),
+        #         },
+        #     },
+        #     upsert=True,
+        # )
 
     async def get_all_session(self, limit: int = 100) -> list:
-        """모든 채팅 세션 목록 조회"""
-        collection = self.db["chat_history"]
-        cursor = collection.find(
-            {}, 
-            {"_id": 0, "session_id": 1, "title": 1, "updated_at": 1}
-        ).sort("updated_at", -1).limit(limit)
-        
-        sessions = await cursor.to_list(length=limit)
-        
-        for session in sessions:
-            if "updated_at" in session and isinstance(session["updated_at"], datetime):
-                session["updated_at"] = int(session["updated_at"].timestamp() * 1000)
-        return sessions
+        """모든 채팅 세션 목록 조회 (MongoDB 비활성화로 빈 배열 반환)"""
+        # MongoDB를 사용하지 않으므로 빈 배열 반환
+        return []
+        # collection = self.db["chat_history"]
+        # cursor = collection.find(
+        #     {}, 
+        #     {"_id": 0, "session_id": 1, "title": 1, "updated_at": 1}
+        # ).sort("updated_at", -1).limit(limit)
+        # 
+        # sessions = await cursor.to_list(length=limit)
+        # 
+        # for session in sessions:
+        #     if "updated_at" in session and isinstance(session["updated_at"], datetime):
+        #         session["updated_at"] = int(session["updated_at"].timestamp() * 1000)
+        # return sessions
 
     async def get_chat_history(self, session_id: str) -> list:
-        """특정 세션의 전체 메시지 내역 조회"""
-        collection = self.db["chat_history"]
-        doc = await collection.find_one({"session_id": session_id}, {"_id": 0, "messages": 1})
-        if not doc:
-            return []
-        messages = doc.get("messages", [])
-        return messages
+        """특정 세션의 전체 메시지 내역 조회 (MongoDB 비활성화로 빈 배열 반환)"""
+        # MongoDB를 사용하지 않으므로 빈 배열 반환
+        return []
+        # collection = self.db["chat_history"]
+        # doc = await collection.find_one({"session_id": session_id}, {"_id": 0, "messages": 1})
+        # if not doc:
+        #     return []
+        # messages = doc.get("messages", [])
+        # return messages
 
     async def delete_session(self, session_id: str) -> bool:
-        """세션 삭제"""
-        collection = self.db["chat_history"]
-        result = await collection.delete_one({"session_id": session_id})
-        return bool(result.deleted_count > 0)
+        """세션 삭제 (MongoDB 비활성화로 항상 True 반환)"""
+        # MongoDB를 사용하지 않으므로 항상 True 반환
+        return True
+        # collection = self.db["chat_history"]
+        # result = await collection.delete_one({"session_id": session_id})
+        # return bool(result.deleted_count > 0)
 
     async def update_session_title(self, session_id: str, new_title: str) -> bool:
-        """세션 제목 수동 변경"""
-        collection = self.db["chat_history"]
-        result = await collection.update_one(
-            {"session_id": session_id},
-            {"$set": {"title": new_title}}
-        )
-        return bool(result.modified_count > 0)
+        """세션 제목 수동 변경 (MongoDB 비활성화로 항상 False 반환)"""
+        # MongoDB를 사용하지 않으므로 항상 False 반환
+        return False
+        # collection = self.db["chat_history"]
+        # result = await collection.update_one(
+        #     {"session_id": session_id},
+        #     {"$set": {"title": new_title}}
+        # )
+        # return bool(result.modified_count > 0)
 
     async def get_session_statistics(self, session_id: str) -> dict:
-        """세션 데이터 통계 조회 (메시지 수 등)"""
-        collection = self.db["chat_history"]
-        doc = await collection.find_one({"session_id": session_id})
-        if not doc:
-            return {}
-        
-        messages = doc.get("messages", [])
-        created_at = doc.get("created_at")
-        updated_at = doc.get("updated_at")
-        duration = int((updated_at - created_at).total_seconds()) if created_at and updated_at else 0
-        
-        return {
-            "message_count": len(messages),
-            "created_at": created_at.isoformat() if created_at else None,
-            "updated_at": updated_at.isoformat() if updated_at else None,
-            "duration_seconds": duration
-        }
+        """세션 데이터 통계 조회 (MongoDB 비활성화로 빈 딕셔너리 반환)"""
+        # MongoDB를 사용하지 않으므로 빈 딕셔너리 반환
+        return {}
+        # collection = self.db["chat_history"]
+        # doc = await collection.find_one({"session_id": session_id})
+        # if not doc:
+        #     return {}
+        # 
+        # messages = doc.get("messages", [])
+        # created_at = doc.get("created_at")
+        # updated_at = doc.get("updated_at")
+        # duration = int((updated_at - created_at).total_seconds()) if created_at and updated_at else 0
+        # 
+        # return {
+        #     "message_count": len(messages),
+        #     "created_at": created_at.isoformat() if created_at else None,
+        #     "updated_at": updated_at.isoformat() if updated_at else None,
+        #     "duration_seconds": duration
+        # }
 
     # --------------------------------------
     # 인덱스 관리 (MongoDB 성능 최적화)

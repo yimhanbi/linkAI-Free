@@ -4,9 +4,9 @@ from fastapi.staticfiles import StaticFiles
 import os 
 from pathlib import Path
 import logging
-from backend.database import db_manager
-from backend.routes import patents, auth, chatbot 
-from backend.services import search_service
+from database import db_manager
+from routes import patents, auth, chatbot
+from services import search_service
 
 LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO").upper()
 logging.basicConfig(
@@ -28,28 +28,13 @@ if should_quiet_third_party_logs:
 app = FastAPI(title="AI INNOTASK 서비스 API")
 
 # 2. CORS 설정 추가 (라우터 연결보다 반드시 위에 위치!)
-cors_origins_raw: str = os.getenv("CORS_ORIGINS", "")
-default_cors_origins: list[str] = [
-    "http://localhost:3000",
-    "http://127.0.0.1:3000",
-    "http://localhost:5173",
-    "http://127.0.0.1:5173",
-    "http://localhost:4173",
-    "http://127.0.0.1:4173",
-    "https://linkai-dev.vercel.app",
-    "https://linkai-rho.vercel.app",
-]
-cors_origins_from_env: list[str] = [origin.strip() for origin in cors_origins_raw.split(",") if origin.strip()]
-cors_origins: list[str] = sorted(set(default_cors_origins + cors_origins_from_env))
-app.add_middleware(
+app. add_middleware(
     CORSMiddleware,
-    allow_origins=cors_origins,
-    allow_credentials=False,
+    allow_origins=["*"],
+    allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
-
 
 # 3. 정적 파일(PDF) 경로 설정 추가
 backend_dir: Path = Path(__file__).resolve().parent

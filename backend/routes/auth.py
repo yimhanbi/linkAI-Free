@@ -1,8 +1,8 @@
 from fastapi import APIRouter, HTTPException, status
 from pydantic import BaseModel, EmailStr
 from datetime import datetime, timedelta 
-from backend.core.security import get_password_hash, verify_password, create_access_token 
-from backend.database import db_manager
+from core.security import get_password_hash, verify_password, create_access_token
+from database import db_manager
 
 router = APIRouter()
 

@@ -6,9 +6,9 @@ import './LoginPage.css';
 const LoginPage = () => {
   const navigate = useNavigate();
   const [isSignIn, setIsSignIn] = useState(true);
+  const ACCESS_PASSWORD = '20260501';
 
   // 1. 로그인용 상태
-  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
 
   // 2. 회원가입용 상태 추가 (백엔드 필드명: name, email, password)
@@ -33,21 +33,20 @@ const LoginPage = () => {
   // 로그인 로직
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    try {
-      const data = await authService.login(email, password);
-      
-      //토큰과 함께 role 정보를 localStorage에 저장함
-      localStorage.setItem('token', data.access_token);
-      localStorage.setItem('role',data.role);
-      localStorage.setItem('name',data.name);
-      localStorage.setItem('email',email);
 
-      window.dispatchEvent(new Event('authChange'));
-      alert('로그인 성공!');
-      navigate('/advanced-search');
-    } catch (error) {
-      alert('로그인 실패: 정보를 확인해주세요.');
+    if (password !== ACCESS_PASSWORD) {
+      alert('로그인 실패: 비밀번호를 확인해주세요.');
+      return;
     }
+
+    localStorage.setItem('token', 'tech-finder-local-access');
+    localStorage.setItem('role', 'user');
+    localStorage.setItem('name', 'Tech Finder');
+    localStorage.setItem('email', '');
+
+    window.dispatchEvent(new Event('authChange'));
+    alert('로그인 성공!');
+    navigate('/advanced-search');
   };
 
   // 3. 회원가입 로직 추가
@@ -126,16 +125,6 @@ const LoginPage = () => {
           <div className="form-wrapper align-items-center">
             <form className="form sign-in" onSubmit={handleLogin}>
               <div className="input-group">
-                <i className='bx bxs-envelope'></i> {/* 아이콘 통일 */}
-                <input 
-                  type="email" 
-                  placeholder="Email" 
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  required
-                />
-              </div>
-              <div className="input-group">
                 <i className='bx bxs-lock-alt'></i>
                 <input 
                   type="password" 
@@ -146,11 +135,6 @@ const LoginPage = () => {
                 />
               </div>
               <button type="submit">Sign in</button>
-              <p><b>Forgot password?</b></p>
-              <p>
-                <span>Don't have an account?</span>
-                <b onClick={toggle} className="pointer"> Sign up here</b>
-              </p>
             </form>
           </div>
         </div>

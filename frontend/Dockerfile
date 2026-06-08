@@ -1,4 +1,5 @@
-FROM node:18-alpine
+# 1단계: Node.js 버전을 20-alpine으로 업그레이드 (Vite 최신 버전 대응)
+FROM node:20-alpine
 
 WORKDIR /app
 
@@ -18,4 +19,5 @@ RUN npm run build
 EXPOSE 3000
 
 # 개발/프리뷰 용: 컨테이너에서 Vite 서버 실행
+# --host 0.0.0.0 설정이 있어야 외부(호스트)에서 접속이 가능합니다.
 CMD ["npm", "run", "dev", "--", "--host", "0.0.0.0", "--port", "3000"]
